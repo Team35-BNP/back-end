@@ -10,6 +10,38 @@ const { issueAccessToken, issueRefreshToken, verifyRefreshToken } = require('../
 const router = express.Router();
 const SALT_ROUNDS = 10;
 
+/**
+ * @openapi
+ * /api/v1/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *     responses:
+ *       201:
+ *         description: Created with access/refresh tokens
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/TokenPair'
+ *       400:
+ *         description: Invalid payload
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Email already registered
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.post('/register', async (req, res) => {
   const parse = registerSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: 'Invalid payload' });
@@ -34,6 +66,30 @@ router.post('/register', async (req, res) => {
   return res.status(201).json({ accessToken, refreshToken });
 });
 
+/**
+ * @openapi
+ * /api/v1/auth/login:
+ *   post:
+ *     summary: Login with email and password
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Returns an access/refresh token pair
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/TokenPair'
+ *       400:
+ *         description: Invalid payload
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post('/login', async (req, res) => {
   const parse = loginSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: 'Invalid payload' });
@@ -58,11 +114,55 @@ router.post('/login', async (req, res) => {
   return res.json({ accessToken, refreshToken });
 });
 
+/**
+ * @openapi
+ * /api/v1/auth/whoami:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user document
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserResponse'
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/whoami', requireAuth(), async (req, res) => {
   const user = await User.findById(req.user.sub).select('_id email roles createdAt');
   return res.json({ user });
 });
 
+/**
+ * @openapi
+ * /api/v1/auth/token/refresh:
+ *   post:
+ *     summary: Rotate refresh token and issue new tokens
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshRequest'
+ *     responses:
+ *       200:
+ *         description: New token pair
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/TokenPair'
+ *       400:
+ *         description: Invalid payload
+ *       403:
+ *         description: Invalid or expired refresh token
+ *       404:
+ *         description: Refresh token or user not found
+ */
 router.post('/token/refresh', async (req, res) => {
   const parsed = refreshSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid payload' });
@@ -103,6 +203,24 @@ router.post('/token/refresh', async (req, res) => {
   return res.json({ accessToken: newAccess, refreshToken: newRefresh });
 });
 
+/**
+ * @openapi
+ * /api/v1/auth/logout:
+ *   post:
+ *     summary: Revoke a refresh token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshRequest'
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *       400:
+ *         description: Invalid payload
+ */
 router.post('/logout', async (req, res) => {
   const parsed = refreshSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid payload' });
