@@ -4,7 +4,6 @@ const { requireAuth } = require('../middleware/auth');
 const Client = require('../models/Client');
 
 const router = express.Router();
-
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 /**
@@ -15,6 +14,10 @@ const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
  *       type: object
  *       properties:
  *         _id: { type: string }
+ *         name: { type: string }
+ *         company: { type: string }
+ *         industry: { type: string }
+ *         location: { type: string }
  *         ebitda_margin_pct: { type: number }
  *         ebit_margin_pct: { type: number }
  *         debt_to_equity: { type: number }
@@ -32,7 +35,12 @@ const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
  *         collateral_coverage_pct: { type: number }
  *         payment_incidents_12m: { type: number }
  *         legal_disputes_open: { type: number }
+ *         lastEvaluation: { type: string, format: date-time }
  *       required:
+ *         - name
+ *         - company
+ *         - industry
+ *         - location
  *         - ebitda_margin_pct
  *         - ebit_margin_pct
  *         - debt_to_equity
@@ -70,12 +78,10 @@ const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
  *       201: { description: Created }
  *       400: { description: Validation or bad request }
  */
-router.post('/', requireAuth(), async (req, res) => {
-  if (!req.body || typeof req.body !== 'object') {
-    return res.status(400).json({ error: 'Body required' });
-  }
+router.post('/', async (req, res) => {
+  if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Body required' });
   try {
-    const doc = await Client.create(req.body); // Mongoose validates here [web:268]
+    const doc = await Client.create(req.body);
     return res.status(201).json(doc);
   } catch (err) {
     return res.status(400).json({ error: 'Validation failed', details: err.message });
@@ -99,7 +105,7 @@ router.post('/', requireAuth(), async (req, res) => {
  *               type: array
  *               items: { $ref: '#/components/schemas/Client' }
  */
-router.get('/', requireAuth(), async (_req, res) => {
+router.get('/', async (_req, res) => {
   const list = await Client.find().sort({ createdAt: -1 });
   return res.json(list);
 });
@@ -153,14 +159,14 @@ router.get('/:id', requireAuth(), async (req, res) => {
  *       400: { description: Validation error }
  *       404: { description: Not found }
  */
-router.put('/:id', requireAuth(), async (req, res) => {
+router.put('/:id', async (req, res) => {
   const { id } = req.params;
   if (!isValidId(id)) return res.status(404).json({ error: 'Not found' });
   try {
     const updated = await Client.findByIdAndUpdate(id, req.body, {
       new: true,
       overwrite: true,
-      runValidators: true, // enforce schema rules on update [web:268]
+      runValidators: true,
     });
     if (!updated) return res.status(404).json({ error: 'Not found' });
     return res.json(updated);
@@ -193,13 +199,13 @@ router.put('/:id', requireAuth(), async (req, res) => {
  *       400: { description: Validation error }
  *       404: { description: Not found }
  */
-router.patch('/:id', requireAuth(), async (req, res) => {
+router.patch('/:id', async (req, res) => {
   const { id } = req.params;
   if (!isValidId(id)) return res.status(404).json({ error: 'Not found' });
   try {
     const updated = await Client.findByIdAndUpdate(id, req.body, {
       new: true,
-      runValidators: true, // validate only provided fields [web:268]
+      runValidators: true,
     });
     if (!updated) return res.status(404).json({ error: 'Not found' });
     return res.json(updated);
@@ -225,7 +231,7 @@ router.patch('/:id', requireAuth(), async (req, res) => {
  *       200: { description: Deleted }
  *       404: { description: Not found }
  */
-router.delete('/:id', requireAuth(), async (req, res) => {
+router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   if (!isValidId(id)) return res.status(404).json({ error: 'Not found' });
   const deleted = await Client.findByIdAndDelete(id);
