@@ -3,6 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth');
+const clientsRoutes = require('./routes/clients');
+
 require('./db');
 
 // Swagger setup
@@ -87,6 +89,7 @@ app.get('/docs-json', (_req, res) => {
 }); // [web:100]
 
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/clients', clientsRoutes);
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
