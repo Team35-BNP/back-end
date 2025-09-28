@@ -6,6 +6,8 @@ const cors = require('cors');
 
 const authRoutes = require('./routes/auth');
 const clientsRoutes = require('./routes/clients');
+const employeeAuthRoutes = require('./routes/employeeAuth');
+
 require('./db'); // initializes mongoose connection
 
 // Swagger
@@ -112,6 +114,7 @@ app.get('/docs-json', (_req, res) => {
 // Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/clients', clientsRoutes);
+app.use('/api/v1/employee-auth', employeeAuthRoutes);
 
 // Health
 app.get('/health', (_req, res) => res.json({ ok: true }));

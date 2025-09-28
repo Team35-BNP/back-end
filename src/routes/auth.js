@@ -60,7 +60,8 @@ router.post('/register', async (req, res) => {
   await RefreshToken.create({
     token: refreshToken,
     user: user._id,
-    expiresAt: new Date(exp * 1000)
+    subjectType: 'User',
+    expiresAt: new Date(exp * 1000),
   });
 
   return res.status(201).json({ accessToken, refreshToken });
@@ -108,7 +109,8 @@ router.post('/login', async (req, res) => {
   await RefreshToken.create({
     token: refreshToken,
     user: user._id,
-    expiresAt: new Date(exp * 1000)
+    subjectType: 'User',
+    expiresAt: new Date(exp * 1000),
   });
 
   return res.json({ accessToken, refreshToken });
@@ -197,7 +199,8 @@ router.post('/token/refresh', async (req, res) => {
   await RefreshToken.create({
     token: newRefresh,
     user: user._id,
-    expiresAt: new Date(exp * 1000)
+    subjectType: 'User',
+    expiresAt: new Date(exp * 1000),
   });
 
   return res.json({ accessToken: newAccess, refreshToken: newRefresh });
